@@ -21,6 +21,7 @@ const SignUpPage = () => {
       return {
         ...prevState,
         [e.target.name]: e.target.value,
+        errors: [],
       };
     });
   };
@@ -35,14 +36,14 @@ const SignUpPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setForm((prevState) => {
-      return { ...prevState, loading: true, errors: [] };
+      return { ...prevState, loading: true };
     });
 
     if (!doPasswordsMatch) {
       setForm((prevState) => {
         return {
           ...prevState,
-          errors: [{ confirmPassword: 'Passwords do not match' }],
+          errors: [confirmError],
         };
       });
       return;

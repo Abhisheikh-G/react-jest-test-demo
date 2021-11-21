@@ -205,13 +205,14 @@ describe('Sign Up Page', () => {
         generateValidationError('username', 'Username cannot be null')
       );
       setup();
+      userEvent.click(button);
+      validationError = await screen.findByText('Username cannot be null');
 
-      await act(async () => {
-        userEvent.click(button);
-        validationError = await screen.findByText('Username cannot be null');
-        server.resetHandlers();
-        userEvent.type(usernameInput, 'username001');
-        userEvent.click(button);
+      userEvent.type(usernameInput, 'username001');
+      userEvent.type(passwordInput, 'newpassword');
+
+      userEvent.click(button);
+      await waitFor(() => {
         expect(validationError).not.toBeInTheDocument();
       });
     });
