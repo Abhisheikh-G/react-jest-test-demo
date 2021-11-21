@@ -199,22 +199,29 @@ describe('Sign Up Page', () => {
       expect(validationError).toBeInTheDocument();
     });
 
-    it('clears validation error after username field is updated', async () => {
-      let validationError;
-      server.use(
-        generateValidationError('username', 'Username cannot be null')
-      );
-      setup();
-      userEvent.click(button);
-      validationError = await screen.findByText('Username cannot be null');
-
-      userEvent.type(usernameInput, 'username001');
-      userEvent.type(passwordInput, 'newpassword');
-
-      userEvent.click(button);
-      await waitFor(() => {
-        expect(validationError).not.toBeInTheDocument();
-      });
-    });
+    it.each`
+      field         | message                      | label
+      ${'username'} | ${'Username cannot be null'} | ${'Username'}
+      ${'email'}    | ${'Email cannot be null'}    | ${'Email'}
+      ${'password'} | ${'Password cannot be null'} | ${'Password'}
+    `(
+      'clears validation error after $field field is updated',
+      async ({ field, message, label }) => {
+        server.use(generateValidationError(field, message));
+        setup();
+        userEvent.click(button);
+        const validationError = await screen.findByText(message);
+        const inputByLabel = screen.getByLabelText(label);
+        userEvent.type(
+          inputByLabel,
+          label === 'Email' ? 'user@testuser.com' : 'username001'
+        );
+        userEvent.type(confirmPasswordInput, 'newpassword');
+        userEvent.click(button);
+        await waitFor(() => {
+          expect(validationError).not.toBeInTheDocument();
+        });
+      }
+    );
   });
 });

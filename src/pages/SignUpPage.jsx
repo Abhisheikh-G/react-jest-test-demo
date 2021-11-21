@@ -52,7 +52,7 @@ const SignUpPage = () => {
     try {
       await axios.post('/api/1.0/users', { username, email, password });
       setForm((prevState) => {
-        return { ...prevState, success: true };
+        return { ...prevState, success: true, errors: [], loading: false };
       });
     } catch (error) {
       if (error.response.status === 400) {
