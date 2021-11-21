@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import Input from '../components/Input';
 
 const SignUpPage = () => {
   const [
-    { username, email, password, confirmPassword, loading, success },
+    { username, email, password, confirmPassword, loading, success, errors },
     setForm,
   ] = useState({
     username: '',
@@ -12,6 +13,7 @@ const SignUpPage = () => {
     confirmPassword: '',
     loading: false,
     success: false,
+    errors: [],
   });
 
   const handleChange = (e) => {
@@ -23,37 +25,50 @@ const SignUpPage = () => {
     });
   };
 
-  const isDisabled =
-    !loading && password && password === confirmPassword ? false : true;
+  const doPasswordsMatch = React.useMemo(
+    () => password === confirmPassword,
+    [confirmPassword, password]
+  );
+  const confirmError = { confirmPassword: 'Passwords do not match' };
+  const isDisabled = !loading && password && doPasswordsMatch ? false : true;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setForm((prevState) => {
-      return { ...prevState, loading: true };
+      return { ...prevState, loading: true, errors: [] };
     });
+
+    if (!doPasswordsMatch) {
+      setForm((prevState) => {
+        return {
+          ...prevState,
+          errors: [{ confirmPassword: 'Passwords do not match' }],
+        };
+      });
+      return;
+    }
 
     try {
       await axios.post('/api/1.0/users', { username, email, password });
       setForm((prevState) => {
         return { ...prevState, success: true };
       });
-    } catch (error) {}
-
-    // setForm((prevState) => {
-    //   return { ...prevState, loading: false };
-    // });
-
-    // fetch('/api/1.0/users', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     username,
-    //     email,
-    //     password,
-    //   }),
-    // });
+    } catch (error) {
+      if (error.response.status === 400) {
+        setForm((prevState) => {
+          return {
+            ...prevState,
+            errors: error.response.data.validationErrors,
+          };
+        });
+      }
+      setForm((prevState) => {
+        return {
+          ...prevState,
+          loading: false,
+        };
+      });
+    }
   };
 
   return (
@@ -75,58 +90,34 @@ const SignUpPage = () => {
           }}
         >
           <h1 className="text-center">Sign Up</h1>
-          <div className="mb-3">
-            <label className="form-label" htmlFor="username">
-              Username
-            </label>
-            <input
-              className="form-control"
-              type="text"
-              name="username"
-              id="username"
-              defaultValue={username}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label" htmlFor="email">
-              Email
-            </label>
-            <input
-              className="form-control"
-              type="text"
-              name="email"
-              id="email"
-              defaultValue={email}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label" htmlFor="password">
-              Password
-            </label>
-            <input
-              className="form-control"
-              type="password"
-              name="password"
-              id="password"
-              defaultValue={password}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label" htmlFor="confirmPassword">
-              Confirm Password
-            </label>
-            <input
-              className="form-control"
-              type="password"
-              name="confirmPassword"
-              id="confirmPassword"
-              defaultValue={confirmPassword}
-              onChange={handleChange}
-            />
-          </div>
+          <Input
+            id="username"
+            type="text"
+            label="Username"
+            handleChange={handleChange}
+            errors={errors}
+          />
+          <Input
+            id="email"
+            type="email"
+            label="Email"
+            handleChange={handleChange}
+            errors={errors}
+          />
+          <Input
+            id="password"
+            type="password"
+            label="Password"
+            handleChange={handleChange}
+            errors={errors}
+          />
+          <Input
+            id="confirmPassword"
+            type="password"
+            label="Confirm Password"
+            handleChange={handleChange}
+            errors={!doPasswordsMatch && confirmError}
+          />
 
           <button
             className="btn btn-primary"

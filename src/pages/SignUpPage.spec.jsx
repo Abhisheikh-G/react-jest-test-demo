@@ -2,6 +2,8 @@ import {
   render,
   screen,
   waitForElementToBeRemoved,
+  waitFor,
+  act,
 } from '@testing-library/react';
 import SignUpPage from './SignUpPage';
 import userEvent from '@testing-library/user-event';
@@ -57,9 +59,8 @@ describe('Sign Up Page', () => {
     });
   });
   describe('Interactions', () => {
-    let button;
+    let button, reqBody, passwordInput, confirmPasswordInput, usernameInput;
     const message = 'Please check your e-mail to activate your account';
-    let reqBody;
     let counter = 0;
     const server = setupServer(
       rest.post('/api/1.0/users', (req, res, ctx) => {
@@ -71,6 +72,7 @@ describe('Sign Up Page', () => {
 
     beforeEach(() => {
       counter = 0;
+      server.resetHandlers();
     });
 
     beforeAll(() => server.listen());
@@ -79,11 +81,11 @@ describe('Sign Up Page', () => {
 
     const setup = () => {
       render(<SignUpPage />);
-      const userInput = screen.getByLabelText('Username');
+      usernameInput = screen.getByLabelText('Username');
       const emailInput = screen.getByLabelText('Email');
-      const passwordInput = screen.getByLabelText('Password');
-      const confirmPasswordInput = screen.getByLabelText('Confirm Password');
-      userEvent.type(userInput, 'Test User');
+      passwordInput = screen.getByLabelText('Password');
+      confirmPasswordInput = screen.getByLabelText('Confirm Password');
+      userEvent.type(usernameInput, 'Test User');
       userEvent.type(emailInput, 'test@test.com');
       userEvent.type(passwordInput, 'password');
       userEvent.type(confirmPasswordInput, 'password');
@@ -150,6 +152,68 @@ describe('Sign Up Page', () => {
       const form = screen.getByTestId('form-sign-up');
       userEvent.click(button);
       await waitForElementToBeRemoved(form);
+    });
+
+    const generateValidationError = (field, message) => {
+      return rest.post('/api/1.0/users', (req, res, ctx) => {
+        return res(
+          ctx.status(400),
+          ctx.json({
+            validationErrors: {
+              [field]: message,
+            },
+          })
+        );
+      });
+    };
+
+    it.each`
+      field         | message
+      ${'username'} | ${'Username cannot be null'}
+      ${'email'}    | ${'Email cannot be null'}
+      ${'password'} | ${'Password cannot be null'}
+    `('displays $message for $field', async ({ field, message }) => {
+      server.use(generateValidationError(field, message));
+      setup();
+      userEvent.click(button);
+      const validationError = await screen.findByText(message);
+      expect(validationError).toBeInTheDocument();
+    });
+
+    it('hides spinner and enables button', async () => {
+      server.use(
+        generateValidationError('username', 'Username cannot be null')
+      );
+      setup();
+      userEvent.click(button);
+      await screen.findByText('Username cannot be null');
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(button).toBeEnabled();
+    });
+
+    it('displays mismatch message for confirm password input', () => {
+      setup();
+      userEvent.type(passwordInput, 'P4ssword1');
+      userEvent.type(confirmPasswordInput, 'P4ssword');
+      const validationError = screen.queryByText('Passwords do not match');
+      expect(validationError).toBeInTheDocument();
+    });
+
+    it('clears validation error after username field is updated', async () => {
+      let validationError;
+      server.use(
+        generateValidationError('username', 'Username cannot be null')
+      );
+      setup();
+
+      await act(async () => {
+        userEvent.click(button);
+        validationError = await screen.findByText('Username cannot be null');
+        server.resetHandlers();
+        userEvent.type(usernameInput, 'username001');
+        userEvent.click(button);
+        expect(validationError).not.toBeInTheDocument();
+      });
     });
   });
 });
