@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import Input from '../components/Input';
+import { withTranslation } from 'react-i18next';
+import LanguageSelector from '../components/LanguageSelector';
 
-const SignUpPage = () => {
+const SignUpPage = ({ t, i18n }) => {
   const [
     { username, email, password, confirmPassword, loading, success, errors },
     setForm,
@@ -90,32 +92,32 @@ const SignUpPage = () => {
             paddingBottom: 25,
           }}
         >
-          <h1 className="text-center">Sign Up</h1>
+          <h1 className="text-center">{t('signUp')}</h1>
           <Input
             id="username"
             type="text"
-            label="Username"
+            label={t('userName')}
             handleChange={handleChange}
             errors={errors}
           />
           <Input
             id="email"
             type="email"
-            label="Email"
+            label={t('email')}
             handleChange={handleChange}
             errors={errors}
           />
           <Input
             id="password"
             type="password"
-            label="Password"
+            label={t('password')}
             handleChange={handleChange}
             errors={errors}
           />
           <Input
             id="confirmPassword"
             type="password"
-            label="Confirm Password"
+            label={t('confirmPassword')}
             handleChange={handleChange}
             errors={!doPasswordsMatch && confirmError}
           />
@@ -133,7 +135,7 @@ const SignUpPage = () => {
                 role="status"
               ></span>
             )}
-            Sign Up
+            {t('signUp')}
           </button>
         </form>
       )}
@@ -146,4 +148,4 @@ const SignUpPage = () => {
   );
 };
 
-export default SignUpPage;
+export default withTranslation()(SignUpPage);

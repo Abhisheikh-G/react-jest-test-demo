@@ -9,7 +9,10 @@ import SignUpPage from './SignUpPage';
 import userEvent from '@testing-library/user-event';
 import { setupServer } from 'msw/node';
 import { rest } from 'msw';
-
+import LanguageSelector from '../components/LanguageSelector';
+import i18n from '../locales/i18n';
+import en from '../locales/en.json';
+import tr from '../locales/tr.json';
 describe('Sign Up Page', () => {
   describe('Layout', () => {
     it('has header', () => {
@@ -223,5 +226,70 @@ describe('Sign Up Page', () => {
         });
       }
     );
+  });
+  describe('Internationalization', () => {
+    const setup = () => {
+      render(
+        <>
+          <SignUpPage />
+          <LanguageSelector />
+        </>
+      );
+    };
+
+    afterEach(() => {
+      act(() => {
+        i18n.changeLanguage('en');
+      });
+    });
+    it('initially displays all text in English', () => {
+      setup();
+
+      expect(
+        screen.getByRole('heading', { name: en.signUp })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: en.signUp })
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText(en.userName)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.email)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.password)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.confirmPassword)).toBeInTheDocument();
+    });
+
+    it('displays all text in Turkish', () => {
+      setup();
+      const toggleTr = screen.getByTitle('Turkish');
+      userEvent.click(toggleTr);
+
+      expect(
+        screen.getByRole('heading', { name: tr.signUp })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: tr.signUp })
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText(tr.userName)).toBeInTheDocument();
+      expect(screen.getByLabelText(tr.email)).toBeInTheDocument();
+      expect(screen.getByLabelText(tr.password)).toBeInTheDocument();
+      expect(screen.getByLabelText(tr.confirmPassword)).toBeInTheDocument();
+    });
+
+    it('displays all text in English after changing languages', () => {
+      setup();
+      const toggleTr = screen.getByTitle('Turkish');
+      userEvent.click(toggleTr);
+      const toggleEn = screen.getByTitle('English');
+      userEvent.click(toggleEn);
+      expect(
+        screen.getByRole('heading', { name: en.signUp })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: en.signUp })
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText(en.userName)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.email)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.password)).toBeInTheDocument();
+      expect(screen.getByLabelText(en.confirmPassword)).toBeInTheDocument();
+    });
   });
 });

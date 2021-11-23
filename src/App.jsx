@@ -1,3 +1,4 @@
+import LanguageSelector from './components/LanguageSelector';
 import SignUpPage from './pages/SignUpPage';
 
 function App() {
@@ -7,6 +8,7 @@ function App() {
       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
     >
       <SignUpPage />
+      <LanguageSelector />
     </div>
   );
 }
