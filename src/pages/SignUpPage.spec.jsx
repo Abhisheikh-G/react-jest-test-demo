@@ -228,6 +228,26 @@ describe('Sign Up Page', () => {
     );
   });
   describe('Internationalization', () => {
+    let counter = 0;
+    let acceptLanguageHeader;
+    const server = setupServer(
+      rest.post('/api/1.0/users', (req, res, ctx) => {
+        counter += 1;
+        acceptLanguageHeader = req.headers.get('Accept-Language');
+        return res(ctx.status(200));
+      })
+    );
+
+    beforeEach(() => {
+      counter = 0;
+      server.resetHandlers();
+    });
+
+    beforeAll(() => server.listen());
+
+    afterAll(() => server.close());
+
+    let passwordInput, confirmPasswordInput;
     const setup = () => {
       render(
         <>
@@ -235,6 +255,8 @@ describe('Sign Up Page', () => {
           <LanguageSelector />
         </>
       );
+      passwordInput = screen.getByLabelText('Password');
+      confirmPasswordInput = screen.getByLabelText('Confirm Password');
     };
 
     afterEach(() => {
@@ -290,6 +312,30 @@ describe('Sign Up Page', () => {
       expect(screen.getByLabelText(en.email)).toBeInTheDocument();
       expect(screen.getByLabelText(en.password)).toBeInTheDocument();
       expect(screen.getByLabelText(en.confirmPassword)).toBeInTheDocument();
+    });
+
+    it('sends accept language header as en for outgoing request', async () => {
+      setup();
+      userEvent.type(passwordInput, 'P4ssword');
+      userEvent.type(confirmPasswordInput, 'P4ssword');
+      const button = screen.getByRole('button', { name: en.signUp });
+      const form = screen.queryByTestId('form-sign-up');
+      userEvent.click(button);
+      await waitForElementToBeRemoved(form);
+      expect(acceptLanguageHeader).toBe('en');
+    });
+
+    it('sends accept language header as tr after selecting it for outgoing request', async () => {
+      setup();
+      userEvent.type(passwordInput, 'P4ssword');
+      userEvent.type(confirmPasswordInput, 'P4ssword');
+      const toggleTr = screen.getByTitle('Turkish');
+      userEvent.click(toggleTr);
+      const button = screen.getByRole('button', { name: tr.signUp });
+      const form = screen.queryByTestId('form-sign-up');
+      userEvent.click(button);
+      await waitForElementToBeRemoved(form);
+      expect(acceptLanguageHeader).toBe('tr');
     });
   });
 });

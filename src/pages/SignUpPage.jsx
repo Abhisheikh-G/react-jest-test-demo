@@ -52,7 +52,15 @@ const SignUpPage = ({ t, i18n }) => {
     }
 
     try {
-      await axios.post('/api/1.0/users', { username, email, password });
+      await axios.post(
+        '/api/1.0/users',
+        { username, email, password },
+        {
+          headers: {
+            'Accept-Language': i18n.language,
+          },
+        }
+      );
       setForm((prevState) => {
         return { ...prevState, success: true, errors: [], loading: false };
       });
